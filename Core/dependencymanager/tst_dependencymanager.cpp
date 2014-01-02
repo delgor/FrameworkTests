@@ -24,7 +24,9 @@ public:
 private slots:
 	
 	// 
-	void storeAndRetrieve ();
+	void storeAndRetrieveApplicationGlobal ();
+	void storeAndRetrieveSingleThread ();
+	void storeAndRetrieveThreadLocal ();
 	void retrieveDefaultInstance ();
 	
 };
@@ -49,8 +51,29 @@ DependencyManagerTest::DependencyManagerTest () {
 	
 }
 
-void DependencyManagerTest::storeAndRetrieve () {
+void DependencyManagerTest::storeAndRetrieveApplicationGlobal () {
 	Nuria::DependencyManager *inst = Nuria::DependencyManager::instance ();
+	inst->setDefaultThreadingPolicy (Nuria::DependencyManager::ApplicationGlobal);
+	inst->storeObject ("DependencyManagerTest", this);
+	
+	QCOMPARE(inst->get< DependencyManagerTest > ("DependencyManagerTest"), this);
+	QCOMPARE(NURIA_DEPENDENCY(DependencyManagerTest), this);
+	
+}
+
+void DependencyManagerTest::storeAndRetrieveSingleThread () {
+	Nuria::DependencyManager *inst = Nuria::DependencyManager::instance ();
+	inst->setDefaultThreadingPolicy (Nuria::DependencyManager::SingleThread);
+	inst->storeObject ("DependencyManagerTest", this);
+	
+	QCOMPARE(inst->get< DependencyManagerTest > ("DependencyManagerTest"), this);
+	QCOMPARE(NURIA_DEPENDENCY(DependencyManagerTest), this);
+	
+}
+
+void DependencyManagerTest::storeAndRetrieveThreadLocal () {
+	Nuria::DependencyManager *inst = Nuria::DependencyManager::instance ();
+	inst->setDefaultThreadingPolicy (Nuria::DependencyManager::ThreadLocal);
 	inst->storeObject ("DependencyManagerTest", this);
 	
 	QCOMPARE(inst->get< DependencyManagerTest > ("DependencyManagerTest"), this);
