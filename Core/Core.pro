@@ -1,4 +1,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-    callback
+    callback \
+    dependencymanager \
+    serializer \
+    variant
