@@ -13,11 +13,14 @@
 
 #include <QtTest/QtTest>
 
+#define NURIA_NO_VARIANT_COMPARISON
 #include <nuria/lazyevaluation.hpp>
 
 class LazyEvaluationTest : public QObject {
 	Q_OBJECT
 private slots:
+	void fieldHandlesTypesCorrectly ();
+	void testFieldToVariant ();
 	
 	void singleCondition ();
 	void basicConditions ();
@@ -27,6 +30,37 @@ private slots:
 };
 
 // 
+void LazyEvaluationTest::fieldHandlesTypesCorrectly () {
+	using namespace Nuria;
+	
+	Field emptyType;
+	Field valueType (val (1));
+	Field argumentType (arg (2));
+	Field callType (test ("aaa", 456));
+	Field customType (Field::Custom + 1, QVariant ());
+	
+	QCOMPARE(emptyType.type (), Field::Empty);
+	QCOMPARE(emptyType.customType (), int (Field::Empty));
+	QCOMPARE(valueType.type (), Field::Value);
+	QCOMPARE(valueType.customType (), int (Field::Value));
+	QCOMPARE(argumentType.type (), Field::Argument);
+	QCOMPARE(argumentType.customType (), int (Field::Argument));
+	QCOMPARE(callType.type (), Field::TestCall);
+	QCOMPARE(callType.customType (), int (Field::TestCall));
+	QCOMPARE(customType.type (), Field::Custom);
+	QCOMPARE(customType.customType (), int (Field::Custom + 1));
+}
+
+void LazyEvaluationTest::testFieldToVariant () {
+	using namespace Nuria;
+	
+	QCOMPARE(Field ().toVariant (), QVariant ());
+	QCOMPARE(val(1).toVariant (), QVariant (1));
+	QCOMPARE(arg(123).toVariant ().userType (), qMetaTypeId< Field > ());
+	QCOMPARE(test ("name", 123).toVariant ().userType (), qMetaTypeId< Field > ());
+	
+}
+
 void LazyEvaluationTest::singleCondition () {
 	using namespace Nuria;
 	
