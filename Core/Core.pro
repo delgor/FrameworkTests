@@ -4,4 +4,5 @@ SUBDIRS += \
     callback \
     dependencymanager \
     serializer \
-    variant
+    variant \
+    lazyevaluation
