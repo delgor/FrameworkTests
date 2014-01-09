@@ -14,6 +14,7 @@
 #include <QtTest/QtTest>
 
 #define NURIA_NO_VARIANT_COMPARISON
+#include <nuria/conditionevaluator.hpp>
 #include <nuria/lazyevaluation.hpp>
 
 class LazyEvaluationTest : public QObject {
@@ -27,6 +28,14 @@ private slots:
 	void simpleConjunction ();
 	void passedArgument ();
 	void stlAlgorithm ();
+	
+	void namedMethod ();
+	void namedMethodWithArguments ();
+	void namedMethodSubMethods ();
+	
+	void nativeMethod ();
+	void nativeMethodWithArguments ();
+	void nativeMethodSubMethods ();
 };
 
 // 
@@ -115,6 +124,63 @@ void LazyEvaluationTest::stlAlgorithm () {
 	
 	std::copy_if(vector.begin (), vector.end (), target.begin (), arg(0) >= 3);
 	QCOMPARE(target, expected);
+}
+
+static bool returnTrue () { return true; }
+static bool returnFalse () { return false; }
+static int returnArgument (int a) { return a; }
+static bool negateArgument (bool arg) { return !arg; }
+
+static Nuria::LazyCondition eval (Nuria::LazyCondition condition) {
+	Nuria::ConditionEvaluator *evaluator = new Nuria::ConditionEvaluator;
+	evaluator->registerMethod ("true", returnTrue);
+	evaluator->registerMethod ("false", returnFalse);
+	evaluator->registerMethod ("argument", returnArgument);
+	evaluator->registerMethod ("not", negateArgument);
+	
+	condition.compile (evaluator);
+	return condition;
+}
+
+void LazyEvaluationTest::namedMethod () {
+	using namespace Nuria;
+	
+	QCOMPARE(eval (test ("true"))(), returnTrue ());
+	QCOMPARE(eval (test ("false"))(), returnFalse ());
+}
+
+
+void LazyEvaluationTest::namedMethodWithArguments () {
+	using namespace Nuria;
+	
+	QCOMPARE(eval (test ("argument", arg(0)) == arg(0))(123), true);
+}
+
+void LazyEvaluationTest::namedMethodSubMethods () {
+	using namespace Nuria;
+	
+	// !!true == true
+	QCOMPARE(eval (test("not", test ("not", arg(0))))(true), true);
+	
+}
+
+void LazyEvaluationTest::nativeMethod () {
+	using namespace Nuria;
+	
+	QCOMPARE(LazyCondition(test (returnTrue)) (), returnTrue ());
+	QCOMPARE(LazyCondition(test (returnFalse)) (), returnFalse ());
+}
+
+void LazyEvaluationTest::nativeMethodWithArguments () {
+	using namespace Nuria;
+	
+	QCOMPARE(LazyCondition(test (returnArgument, arg(0)) == arg(0)) (123), true);
+}
+
+void LazyEvaluationTest::nativeMethodSubMethods () {
+	using namespace Nuria;
+	
+	QCOMPARE(LazyCondition(test (negateArgument, test (negateArgument, arg(0)))) (true), true);
 }
 
 QTEST_MAIN(LazyEvaluationTest)
