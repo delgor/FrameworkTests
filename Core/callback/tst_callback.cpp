@@ -13,7 +13,9 @@
 
 #include <QString>
 #include <QtTest>
+#include <QDate>
 
+#define NURIA_NO_VARIANT_COMPARISON
 #include <nuria/callback.hpp>
 static bool g_wasCalled = false;
 static int g_result = 0;
@@ -26,26 +28,28 @@ class CallbackTest : public QObject {
 public:
 	CallbackTest ();
 	
-private Q_SLOTS:
-	void initTestCase ();
-	void cleanupTestCase ();
-	
+private slots:
 	void callingVoidStaticNoArguments ();
 	void callingIntStaticNoArguments ();
 	void callingVoidStaticWithArguments ();
 	void callingIntStaticWithArguments ();
 	
+	void callingVoidMemberNoArguments ();
+	void callingIntMemberNoArguments ();
+	void callingVoidMemberWithArguments ();
+	void callingIntMemberWithArguments ();
+	
+	void callingVoidSlotNoArguments ();
+	void callingIntSlotNoArguments ();
+	void callingVoidSlotWithArguments ();
+	void callingIntSlotWithArguments ();
+	
+	void implicitArgumentConversion ();
+	void implicitArgumentConversionCustomType ();
 };
 
+
 CallbackTest::CallbackTest () {
-	
-}
-
-void CallbackTest::initTestCase () {
-	
-}
-
-void CallbackTest::cleanupTestCase () {
 	
 }
 
@@ -76,12 +80,103 @@ void CallbackTest::callingVoidStaticWithArguments () {
 }
 
 // 
-
 static int staticIntWithArgs (int a, int b) { return a + b; }
 void CallbackTest::callingIntStaticWithArguments () {
 	Callback cb (staticIntWithArgs);
 	int result = cb (3, 4).toInt ();
 	QCOMPARE(result, 7);
+}
+
+// 
+class Members : public QObject {
+	Q_OBJECT
+public:
+	int i;
+	
+	Members () : i (123) {}
+	
+public slots:
+	void voidNoArgs () {
+		qDebug("Members::voidNoArgs called");
+	}
+	
+	int intNoArgs () {
+		return this->i;
+	}
+	
+	void voidWithArgs (int a, int b) {
+		qDebug("Members::voidWithArgs %i %i", a, b);
+	}
+	
+	int intWithArgs (int a, int b) {
+		return a + b;
+	}
+	
+};
+
+void CallbackTest::callingVoidMemberNoArguments () {
+	Members m;
+	QTest::ignoreMessage (QtDebugMsg, "Members::voidNoArgs called");
+	Callback (&m, &Members::voidNoArgs)();
+}
+
+void CallbackTest::callingIntMemberNoArguments () {
+	Members m;
+	QCOMPARE(Callback (&m, &Members::intNoArgs)(), QVariant (m.i));
+}
+
+void CallbackTest::callingVoidMemberWithArguments () {
+	Members m;
+	QTest::ignoreMessage (QtDebugMsg, "Members::voidWithArgs 4 5");
+	Callback (&m, &Members::voidWithArgs)(4, 5);
+}
+
+void CallbackTest::callingIntMemberWithArguments () {
+	Members m;
+	QCOMPARE(Callback (&m, &Members::intWithArgs)(4, 5), QVariant (4 + 5));
+}
+
+void CallbackTest::callingVoidSlotNoArguments () {
+	Members m;
+	QTest::ignoreMessage (QtDebugMsg, "Members::voidNoArgs called");
+	Callback (&m, SLOT(voidNoArgs()))();
+}
+
+void CallbackTest::callingIntSlotNoArguments () {
+	Members m;
+	QCOMPARE(Callback (&m, SLOT(intNoArgs()))(), QVariant (m.i));
+}
+
+void CallbackTest::callingVoidSlotWithArguments () {
+	Members m;
+	QTest::ignoreMessage (QtDebugMsg, "Members::voidWithArgs 4 5");
+	Callback (&m, SLOT(voidWithArgs(int,int)))(4, 5);
+}
+
+void CallbackTest::callingIntSlotWithArguments () {
+	Members m;
+	QCOMPARE(Callback (&m, SLOT(intWithArgs(int,int)))(4, 5), QVariant (4 + 5));
+}
+
+// 
+void CallbackTest::implicitArgumentConversion () {
+	QString a ("5");
+	QString b ("4");
+	
+	// Will convert QString to int
+	QCOMPARE(Callback (&staticIntWithArgs)(a, b), QVariant (5 + 4));
+}
+
+static void printString (const QString &string) { qDebug("%s", qPrintable(string)); }
+void CallbackTest::implicitArgumentConversionCustomType () {
+	Variant::registerConversion< QDate, QString > ([](const QDate &date) {
+		return new QString (date.toString (Qt::ISODate));
+	});
+	
+	QDate date (2010, 1, 2);
+	QTest::ignoreMessage (QtDebugMsg, "2010-01-02");
+	Callback cb (&printString);
+	cb (date);
 }
 
 QTEST_APPLESS_MAIN(CallbackTest)
