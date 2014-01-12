@@ -23,6 +23,7 @@ private slots:
 	void fieldHandlesTypesCorrectly ();
 	void testFieldToVariant ();
 	
+	void invalidCondition ();
 	void singleCondition ();
 	void basicConditions ();
 	void simpleConjunction ();
@@ -68,6 +69,13 @@ void LazyEvaluationTest::testFieldToVariant () {
 	QCOMPARE(arg(123).toVariant ().userType (), qMetaTypeId< Field > ());
 	QCOMPARE(test ("name", 123).toVariant ().userType (), qMetaTypeId< Field > ());
 	
+}
+
+void LazyEvaluationTest::invalidCondition () {
+	using namespace Nuria;
+	
+	QVERIFY(!LazyCondition ().isValid ());
+	QVERIFY(LazyCondition (val (true)).isValid ());
 }
 
 void LazyEvaluationTest::singleCondition () {
