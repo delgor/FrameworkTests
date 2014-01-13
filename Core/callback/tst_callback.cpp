@@ -46,6 +46,7 @@ private slots:
 	
 	void implicitArgumentConversion ();
 	void implicitArgumentConversionCustomType ();
+	void implicitVariantToTargetType ();
 };
 
 
@@ -177,6 +178,15 @@ void CallbackTest::implicitArgumentConversionCustomType () {
 	QTest::ignoreMessage (QtDebugMsg, "2010-01-02");
 	Callback cb (&printString);
 	cb (date);
+}
+
+void CallbackTest::implicitVariantToTargetType () {
+	QString a ("a");
+	QVariant v (a);
+	
+	QTest::ignoreMessage (QtDebugMsg, "a");
+	Callback cb (&printString);
+	cb (v);
 }
 
 QTEST_APPLESS_MAIN(CallbackTest)
