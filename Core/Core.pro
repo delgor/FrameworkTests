@@ -5,4 +5,5 @@ SUBDIRS += \
     dependencymanager \
     serializer \
     variant \
-    lazyevaluation
+    lazyevaluation \
+    lazyconditionwalker
