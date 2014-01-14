@@ -47,6 +47,13 @@ private slots:
 	void implicitArgumentConversion ();
 	void implicitArgumentConversionCustomType ();
 	void implicitVariantToTargetType ();
+	
+	void bindArguments ();
+	void prependBoundArguments ();
+	void reorderArguments ();
+	void mixBoundWithReordering ();
+	void bindImplicitConversion ();
+	
 };
 
 
@@ -159,7 +166,6 @@ void CallbackTest::callingIntSlotWithArguments () {
 	QCOMPARE(Callback (&m, SLOT(intWithArgs(int,int)))(4, 5), QVariant (4 + 5));
 }
 
-// 
 void CallbackTest::implicitArgumentConversion () {
 	QString a ("5");
 	QString b ("4");
@@ -187,6 +193,60 @@ void CallbackTest::implicitVariantToTargetType () {
 	QTest::ignoreMessage (QtDebugMsg, "a");
 	Callback cb (&printString);
 	cb (v);
+}
+
+// 
+static int bindMe (int a, int b, int c) {
+	qDebug("%i %i %i", a, b, c);
+	return a * b + c;
+}
+
+void CallbackTest::bindArguments () {
+//	Callback cb = Callback::bound (bindMe, 2, 3, 4);
+	Callback cb (bindMe);
+	cb.bind (2, 3, 4);
+	
+	QTest::ignoreMessage (QtDebugMsg, "2 3 4");
+	QCOMPARE(cb ().toInt (), 2 * 3 + 4);
+	
+}
+
+void CallbackTest::prependBoundArguments () {
+//	Callback cb = Callback::bound (bindMe, 2, 3);
+	Callback cb (bindMe);
+	cb.bind (2, 3);
+	
+	QTest::ignoreMessage (QtDebugMsg, "2 3 4");
+	QCOMPARE(cb (4).toInt (), 2 * 3 + 4);
+	
+}
+
+void CallbackTest::reorderArguments () {
+//	Callback cb = Callback::bound (bindMe, Callback::_3, Callback::_2, Callback::_1);
+	Callback cb (bindMe);
+	cb.bind (Callback::_3, Callback::_2, Callback::_1);
+	
+	QTest::ignoreMessage (QtDebugMsg, "2 3 4");
+	QCOMPARE(cb (4, 3, 2).toInt (), 2 * 3 + 4);
+	
+}
+
+void CallbackTest::mixBoundWithReordering () {
+//	Callback cb = Callback::bound (bindMe, Callback::_2, 3, Callback::_1);
+	Callback cb (bindMe);
+	cb.bind (Callback::_2, 3, Callback::_1);
+	
+	QTest::ignoreMessage (QtDebugMsg, "2 3 4");
+	QCOMPARE(cb (4, 2).toInt (), 2 * 3 + 4);
+	
+}
+
+void CallbackTest::bindImplicitConversion () {
+	Callback cb (bindMe);
+	cb.bind ("2", "3", "4"); // Implicit QString -> int
+	
+	QTest::ignoreMessage (QtDebugMsg, "2 3 4");
+	QCOMPARE(cb (4, 2).toInt (), 2 * 3 + 4);
 }
 
 QTEST_APPLESS_MAIN(CallbackTest)
