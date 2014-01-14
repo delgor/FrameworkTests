@@ -29,6 +29,11 @@ private slots:
 	
 	void doNotWalkArguments ();
 	void doWalkArguments ();
+	
+	void manipulateCondition ();
+	void manipulateField ();
+	void manipulateValue ();
+	void manipulateArgument ();
 };
 
 void LazyConditionWalkerTest::testLazyConditionHandlers () {
@@ -47,9 +52,8 @@ void LazyConditionWalkerTest::testLazyConditionHandlers () {
 		LazyCondition::LogicAnd, LazyCondition::LessEqual, LazyCondition::LogicOr
 	};
 	
-	
-	Callback testFunc = Callback::fromLambda([&](QVariantList, LazyCondition c) {
-			    result.append (c.type ());
+	Callback testFunc = Callback::fromLambda([&](QVariantList, QVariant c) {
+			    result.append (c.value< LazyCondition > ().type ());
 	});
 	
 	// 
@@ -200,6 +204,128 @@ void LazyConditionWalkerTest::doWalkArguments () {
 	// 
 	walker.walk (condition, true);
 	QCOMPARE(intSeen, 1);
+}
+
+void LazyConditionWalkerTest::manipulateCondition () {
+	using namespace Nuria;
+	
+	// 
+	LazyCondition condition (val (1) == val (2) && val (3) < val (4));
+	
+	Callback testFunc = Callback::fromLambda([&](QVariantList, LazyCondition c) {
+			    return LazyCondition (c.left (), LazyCondition::NonEqual, c.right ());
+	});
+	
+	// 
+	LazyConditionWalker walker;
+	walker.onCondition (LazyCondition::Equal, testFunc);
+	
+	LazyCondition result = walker.walk (condition);
+	LazyCondition left = result.left ().value< LazyCondition > ();
+	LazyCondition right = result.right ().value< LazyCondition > ();
+	
+	QCOMPARE(result.type (), LazyCondition::LogicAnd);
+	QCOMPARE(left.type (), LazyCondition::NonEqual);
+	QCOMPARE(right.type (), LazyCondition::Less);
+	QCOMPARE(left.left (), QVariant (1));
+	QCOMPARE(left.right (), QVariant (2));
+	QCOMPARE(right.left (), QVariant (3));
+	QCOMPARE(right.right (), QVariant (4));
+	
+}
+
+void LazyConditionWalkerTest::manipulateField () {
+	using namespace Nuria;
+	
+	// 
+	LazyCondition condition (val (1) == arg (0) && test ("foo"));
+	
+	Callback argToValue = Callback::fromLambda([]() {
+		return QVariant (1);
+	});
+	
+	Callback testToArgument = Callback::fromLambda([]() {
+		return arg (1);
+	});
+	
+	// 
+	LazyConditionWalker walker;
+	walker.onField (Field::Argument, argToValue);
+	walker.onField (Field::TestCall, testToArgument);
+	
+	// 
+	LazyCondition result = walker.walk (condition);
+	LazyCondition left = result.left ().value< LazyCondition > ();
+	LazyCondition right = result.right ().value< LazyCondition > ();
+	Field rightField = right.left ().value< Field > ();
+	
+	QCOMPARE(result.type (), LazyCondition::LogicAnd);
+	QCOMPARE(left.type (), LazyCondition::Equal);
+	QCOMPARE(result.right ().userType (), qMetaTypeId< LazyCondition > ());
+	QCOMPARE(rightField.type (), Field::Argument);
+	QCOMPARE(left.left (), QVariant (1));
+	QCOMPARE(left.right (), QVariant (1));
+	QCOMPARE(rightField.value (), QVariant (1));
+}
+
+
+void LazyConditionWalkerTest::manipulateValue () {
+	using namespace Nuria;
+	
+	// 
+	LazyCondition condition (val (1) == val (false) && val (3) < val (4));
+	
+	Callback testFunc = Callback::fromLambda([]() {
+			    return true;
+	});
+	
+	// 
+	LazyConditionWalker walker;
+	walker.onVariant (QMetaType::Int, testFunc);
+	
+	LazyCondition result = walker.walk (condition);
+	LazyCondition left = result.left ().value< LazyCondition > ();
+	LazyCondition right = result.right ().value< LazyCondition > ();
+	
+	QCOMPARE(result.type (), LazyCondition::LogicAnd);
+	QCOMPARE(left.type (), LazyCondition::Equal);
+	QCOMPARE(right.type (), LazyCondition::Less);
+	QCOMPARE(left.left (), QVariant (true));
+	QCOMPARE(left.right (), QVariant (false));
+	QCOMPARE(right.left (), QVariant (true));
+	QCOMPARE(right.right (), QVariant (true));
+	
+}
+
+void LazyConditionWalkerTest::manipulateArgument () {
+	
+	using namespace Nuria;
+	
+	// 
+	LazyCondition condition (val (1) == arg (1) && test ("foo", arg (2)));
+	
+	Callback testFunc = Callback::fromLambda([]() {
+			    return 1;
+	});
+	
+	// 
+	LazyConditionWalker walker;
+	walker.onField (Field::Argument, testFunc);
+	
+	LazyCondition result = walker.walk (condition, true);
+	LazyCondition left = result.left ().value< LazyCondition > ();
+	LazyCondition right = result.right ().value< LazyCondition > ();
+	Field field = right.left ().value< Field > ();
+	TestCall call = field.value ().value< TestCall > ();
+	
+	QCOMPARE(result.type (), LazyCondition::LogicAnd);
+	QCOMPARE(left.type (), LazyCondition::Equal);
+	QCOMPARE(left.left (), QVariant (1));
+	QCOMPARE(left.right (), QVariant (1));
+	QCOMPARE(call.name (), QString("foo"));
+	QCOMPARE(call.arguments ().length (), 1);
+	QCOMPARE(call.arguments ().first ().toInt (), 1);
+	
 }
 
 QTEST_MAIN(LazyConditionWalkerTest)
