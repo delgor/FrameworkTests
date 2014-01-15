@@ -169,7 +169,8 @@ void LazyEvaluationTest::namedMethodSubMethods () {
 	
 	// !!true == true
 	QCOMPARE(eval (test ("not", arg(0)))(true), false);
-	QCOMPARE(eval (test("not", test ("not", arg(0))))(true), true);
+	QCOMPARE(eval (test ("not", test ("not", true)))(), true);
+	QCOMPARE(eval (test ("not", test ("not", arg(0))))(true), true);
 	
 }
 
