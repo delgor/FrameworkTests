@@ -202,9 +202,7 @@ static int bindMe (int a, int b, int c) {
 }
 
 void CallbackTest::bindArguments () {
-//	Callback cb = Callback::bound (bindMe, 2, 3, 4);
-	Callback cb (bindMe);
-	cb.bind (2, 3, 4);
+	Callback cb = Callback (bindMe).bind (2, 3, 4);
 	
 	QTest::ignoreMessage (QtDebugMsg, "2 3 4");
 	QCOMPARE(cb ().toInt (), 2 * 3 + 4);
@@ -212,9 +210,7 @@ void CallbackTest::bindArguments () {
 }
 
 void CallbackTest::prependBoundArguments () {
-//	Callback cb = Callback::bound (bindMe, 2, 3);
-	Callback cb (bindMe);
-	cb.bind (2, 3);
+	Callback cb = Callback (bindMe).bind (2, 3);
 	
 	QTest::ignoreMessage (QtDebugMsg, "2 3 4");
 	QCOMPARE(cb (4).toInt (), 2 * 3 + 4);
@@ -222,9 +218,7 @@ void CallbackTest::prependBoundArguments () {
 }
 
 void CallbackTest::reorderArguments () {
-//	Callback cb = Callback::bound (bindMe, Callback::_3, Callback::_2, Callback::_1);
-	Callback cb (bindMe);
-	cb.bind (Callback::_3, Callback::_2, Callback::_1);
+	Callback cb = Callback (bindMe).bind (Callback::_3, Callback::_2, Callback::_1);
 	
 	QTest::ignoreMessage (QtDebugMsg, "2 3 4");
 	QCOMPARE(cb (4, 3, 2).toInt (), 2 * 3 + 4);
@@ -232,9 +226,7 @@ void CallbackTest::reorderArguments () {
 }
 
 void CallbackTest::mixBoundWithReordering () {
-//	Callback cb = Callback::bound (bindMe, Callback::_2, 3, Callback::_1);
-	Callback cb (bindMe);
-	cb.bind (Callback::_2, 3, Callback::_1);
+	Callback cb = Callback (bindMe).bind (Callback::_2, 3, Callback::_1);
 	
 	QTest::ignoreMessage (QtDebugMsg, "2 3 4");
 	QCOMPARE(cb (4, 2).toInt (), 2 * 3 + 4);
@@ -242,11 +234,11 @@ void CallbackTest::mixBoundWithReordering () {
 }
 
 void CallbackTest::bindImplicitConversion () {
-	Callback cb (bindMe);
-	cb.bind ("2", "3", "4"); // Implicit QString -> int
+	Callback cb = Callback (bindMe).bind ("2", "3", "4");
 	
+	// Implicit QString -> int
 	QTest::ignoreMessage (QtDebugMsg, "2 3 4");
-	QCOMPARE(cb (4, 2).toInt (), 2 * 3 + 4);
+	QCOMPARE(cb ().toInt (), 2 * 3 + 4);
 }
 
 QTEST_APPLESS_MAIN(CallbackTest)
