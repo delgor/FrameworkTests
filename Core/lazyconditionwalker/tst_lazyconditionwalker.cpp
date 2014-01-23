@@ -13,7 +13,6 @@
 
 #include <QtTest/QtTest>
 
-#define NURIA_NO_VARIANT_COMPARISON
 #include <nuria/lazyconditionwalker.hpp>
 #include <nuria/lazyevaluation.hpp>
 

@@ -11,7 +11,6 @@
  * along with the library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define NURIA_NO_VARIANT_COMPARISON
 #include <nuria/variant.hpp>
 
 #include <QtTest/QtTest>
