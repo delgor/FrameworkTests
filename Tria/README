@@ -1,0 +1,7 @@
+This directory contains a unit-test for Tria. As this is a tool, we don't parse
+the output ourself. Instead, we let tria generate code out of a header
+("tst_header.hpp") and then use Nuria::MetaObject in tst_<name>.cpp to examine
+the results, verifying them.
+
+As all features are tightly packed into Tria, it doesn't make too much sense
+at the moment to split tests into smaller chunks.
