@@ -60,6 +60,7 @@ private slots:
 	void createAndDestroyInstance ();
 	
 	void verifyFieldType ();
+	void verifyFieldAccess ();
 	void readWriteRawField ();
 	void readWriteRequireField ();
 	void readWriteUnguarded ();
@@ -483,7 +484,23 @@ void TriaTest::verifyFieldType () {
 	QCOMPARE(unguarded.typeName (), QByteArray ("int"));
 	QCOMPARE(guarded.typeName (), QByteArray ("int"));
 	QCOMPARE(readOnly.typeName (), QByteArray ("int"));
+}
+
+void TriaTest::verifyFieldAccess () {
+	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::A");
+	Nuria::MetaField rawField = meta->fieldByName ("rawField");
+	Nuria::MetaField requireField = meta->fieldByName ("requireField");
+	Nuria::MetaField unguarded = meta->fieldByName ("unguarded");
+	Nuria::MetaField guarded = meta->fieldByName ("guarded");
+	Nuria::MetaField readOnly = meta->fieldByName ("readOnly");
+	Nuria::MetaField nonExistant = meta->fieldByName ("Tria");
 	
+	QCOMPARE(rawField.access (), Nuria::MetaField::ReadWrite);
+	QCOMPARE(requireField.access (), Nuria::MetaField::ReadWrite);
+	QCOMPARE(unguarded.access (), Nuria::MetaField::ReadWrite);
+	QCOMPARE(guarded.access (), Nuria::MetaField::ReadWrite);
+	QCOMPARE(readOnly.access (), Nuria::MetaField::ReadOnly);
+	QCOMPARE(nonExistant.access (), Nuria::MetaField::NoAccess);
 }
 
 void TriaTest::readWriteRawField () {
