@@ -259,7 +259,10 @@ void TriaTest::checkNonExistanceOfIgnoredElements () {
 	QVERIFY(!meta->enumByName ("ignoredEnum").isValid ());
 	QVERIFY(!meta->method ({ "ignoredMethod" }).isValid ());
 	QVERIFY(!meta->method ({ "ignoredStatic" }).isValid ());
-	QVERIFY(!meta->method ({ "", "int" }).isValid ()); // Constructor.
+	QVERIFY(!meta->method ({ "", "int" }).isValid ()); // Constructor
+	
+	// Skipped conversion operator
+	QVERIFY(!Nuria::Variant::canConvert (qMetaTypeId< Test::A > (), qMetaTypeId< QPoint > ()));
 	
 }
 
@@ -535,7 +538,6 @@ void TriaTest::testToMethodConversion () {
 	QCOMPARE(result.toString ().toInt (), 1337);
 	
 }
-
 
 void TriaTest::testOperatorConversion () {
 	QTest::ignoreMessage (QtDebugMsg, "ctor");

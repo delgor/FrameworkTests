@@ -21,6 +21,7 @@
 #include <nuria/essentials.hpp>
 #include <QObject>
 #include <QString>
+#include <QPoint>
 
 // Namespaces are allowed by using the qualified name of types.
 namespace Test {
@@ -73,6 +74,9 @@ public:
 	
 	// Conversion operator
 	operator Numbers () { return (Numbers)field; }
+	
+	NURIA_SKIP
+	operator QPoint () { return QPoint(0, 0); }
 	
 	// Will be ignored because return type or soem argument doesn't have value semantics.
 	QObject foo ();
