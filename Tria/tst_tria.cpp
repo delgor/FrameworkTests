@@ -60,8 +60,11 @@ private slots:
 	void createAndDestroyInstance ();
 	
 	void verifyFieldType ();
-	void readField ();
-	void writeField ();
+	void readWriteRawField ();
+	void readWriteRequireField ();
+	void readWriteUnguarded ();
+	void readWriteGuarded ();
+	void readWriteReadOnly ();
 	
 	void testCtorConversion ();
 	void testFromMethodConversion ();
@@ -124,7 +127,7 @@ void TriaTest::verifyTypeA () {
 	QCOMPARE(a->parents ().length (), 0);
 	QCOMPARE(a->annotationCount (), 1);
 	QCOMPARE(a->methodCount (), 4);
-	QCOMPARE(a->fieldCount (), 1);
+	QCOMPARE(a->fieldCount (), 5);
 	QCOMPARE(a->enumCount (), 3);
 	
 	QVERIFY(a->method ({ "" }).isValid ());
@@ -408,7 +411,7 @@ void TriaTest::checkEnumAnnotations () {
 
 void TriaTest::checkFieldAnnotations () {
 	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::A");
-	Nuria::MetaField field = meta->fieldByName ("field");
+	Nuria::MetaField field = meta->fieldByName ("rawField");
 	
 	QVariantMap expect { { "IsAField", true } };
 	QCOMPARE(allAnnotations (field), expect);
@@ -469,36 +472,101 @@ void TriaTest::createAndDestroyInstance () {
 
 void TriaTest::verifyFieldType () {
 	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::A");
-	Nuria::MetaField field = meta->fieldByName ("field");
+	Nuria::MetaField rawField = meta->fieldByName ("rawField");
+	Nuria::MetaField requireField = meta->fieldByName ("requireField");
+	Nuria::MetaField unguarded = meta->fieldByName ("unguarded");
+	Nuria::MetaField guarded = meta->fieldByName ("guarded");
+	Nuria::MetaField readOnly = meta->fieldByName ("readOnly");
 	
-	QVERIFY(field.isValid ());
-	QCOMPARE(field.typeName (), QByteArray ("int"));
+	QCOMPARE(rawField.typeName (), QByteArray ("int"));
+	QCOMPARE(requireField.typeName (), QByteArray ("int"));
+	QCOMPARE(unguarded.typeName (), QByteArray ("int"));
+	QCOMPARE(guarded.typeName (), QByteArray ("int"));
+	QCOMPARE(readOnly.typeName (), QByteArray ("int"));
 	
 }
 
-void TriaTest::readField () {
+void TriaTest::readWriteRawField () {
 	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::A");
-	Nuria::MetaField field = meta->fieldByName ("field");
+	Nuria::MetaField field = meta->fieldByName ("rawField");
 	
 	QTest::ignoreMessage (QtDebugMsg, "ctor");
 	QTest::ignoreMessage (QtDebugMsg, "dtor");
 	Test::A a;
 	
-	a.field = 123;
+	a.rawField = 0;
+	QVERIFY(field.write (&a, 123));
+	QCOMPARE(a.rawField, 123);
 	QCOMPARE(field.read (&a).toInt (), 123);
 }
 
-void TriaTest::writeField () {
+void TriaTest::readWriteRequireField () {
 	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::A");
-	Nuria::MetaField field = meta->fieldByName ("field");
+	Nuria::MetaField field = meta->fieldByName ("requireField");
 	
 	QTest::ignoreMessage (QtDebugMsg, "ctor");
 	QTest::ignoreMessage (QtDebugMsg, "dtor");
 	Test::A a;
 	
-	a.field = 0;
-	field.write (&a, 123);
-	QCOMPARE(a.field, 123);
+	a.requireField = 0;
+	QVERIFY(field.write (&a, 10));
+	QCOMPARE(a.requireField, 10);
+	QCOMPARE(field.read (&a).toInt (), 10);
+	
+	QVERIFY(!field.write (&a, 20));
+	QCOMPARE(a.requireField, 10);
+	QCOMPARE(field.read (&a).toInt (), 10);
+	
+}
+
+void TriaTest::readWriteUnguarded () {
+	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::A");
+	Nuria::MetaField field = meta->fieldByName ("unguarded");
+	
+	QTest::ignoreMessage (QtDebugMsg, "ctor");
+	QTest::ignoreMessage (QtDebugMsg, "dtor");
+	Test::A a;
+	
+	a.setUnguarded (0);
+	QVERIFY(field.write (&a, 123));
+	QCOMPARE(a.unguarded (), 123);
+	QCOMPARE(field.read (&a).toInt (), 123);
+	
+}
+
+void TriaTest::readWriteGuarded () {
+	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::A");
+	Nuria::MetaField field = meta->fieldByName ("guarded");
+	
+	QTest::ignoreMessage (QtDebugMsg, "ctor");
+	QTest::ignoreMessage (QtDebugMsg, "dtor");
+	Test::A a;
+	
+	a.setGuarded (0);
+	QVERIFY(field.write (&a, 1));
+	QCOMPARE(a.guarded (), 1);
+	QCOMPARE(field.read (&a).toInt (), 1);
+	
+	QVERIFY(!field.write (&a, -1));
+	QCOMPARE(a.guarded (), 1);
+	QCOMPARE(field.read (&a).toInt (), 1);
+	
+}
+
+
+void TriaTest::readWriteReadOnly () {
+	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::A");
+	Nuria::MetaField field = meta->fieldByName ("readOnly");
+	
+	QTest::ignoreMessage (QtDebugMsg, "ctor");
+	QTest::ignoreMessage (QtDebugMsg, "dtor");
+	Test::A a;
+	
+	QVERIFY(!field.write (&a, 1));
+	QCOMPARE(field.read (&a).toInt (), 0xC0FFEE);
+	
+	QVERIFY(!field.write (&a, 0xC0FFEE));
+	QCOMPARE(field.read (&a).toInt (), 0xC0FFEE);
 	
 }
 
@@ -546,7 +614,7 @@ void TriaTest::testOperatorConversion () {
 	QTest::ignoreMessage (QtDebugMsg, "dtor");
 	
 	Test::A a;
-	a.field = Test::A::Hundred;
+	a.rawField = Test::A::Hundred;
 	
 	QVariant result = Nuria::Variant::convert< Test::A::Numbers > (QVariant::fromValue (a));
 	QVERIFY(result.userType () == qMetaTypeId< Test::A::Numbers > ());

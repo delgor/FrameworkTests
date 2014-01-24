@@ -40,6 +40,8 @@ class NURIA_INTROSPECT NURIA_ANNOTATE(DoesItWork, 1 + 2) A {
 	static void ignoredStatic () {}
 	A (int a) { (void)a; }
 	
+	int m_unguarded;
+	int m_guarded;
 public:
 	
 	// Enums are sorted ..
@@ -73,7 +75,7 @@ public:
 	void callMe (int a) { qDebug("a=%i", a); }
 	
 	// Conversion operator
-	operator Numbers () { return (Numbers)field; }
+	operator Numbers () { return (Numbers)rawField; }
 	
 	NURIA_SKIP
 	operator QPoint () { return QPoint(0, 0); }
@@ -82,8 +84,31 @@ public:
 	QObject foo ();
 	void foo (QObject a);
 	
+	// Raw fields
 	NURIA_ANNOTATE(IsAField, true)
-	int field;
+	int rawField;
+	
+	NURIA_ANNOTATE(IsAFieldToo, true)
+	NURIA_REQUIRE(requireField >= 10 && requireField < 20)
+	int requireField;
+	
+	// Fields with accessors
+	NURIA_READ(unguarded)
+	int unguarded () { return this->m_unguarded; }
+	
+	NURIA_WRITE(unguarded)
+	void setUnguarded (int b) { this->m_unguarded = b; }
+	
+	NURIA_READ(guarded)
+	int guarded () { return this->m_guarded; }
+	
+	NURIA_WRITE(guarded)
+	NURIA_REQUIRE(b > 0)
+	void setGuarded (int b) { this->m_guarded = b; }
+	
+	// Read-only field
+	NURIA_READ(readOnly)
+	int readOnlyValue () const { return 0xC0FFEE; }
 	
 };
 
