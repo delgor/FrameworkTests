@@ -136,6 +136,37 @@ struct NURIA_INTROSPECT B : public A {
 	
 };
 
+// Class testing complex NURIA_REQUIREs on methods and fields
+struct NURIA_INTROSPECT C {
+	int member;
+	bool checker (int a, int b) {
+		qDebug("checker=%i,%i", a, b);
+		return (a < b);
+	}
+	
+	NURIA_REQUIRE(name != "C")
+	C (QString name) { qDebug(qPrintable(name)); }
+	
+	NURIA_REQUIRE(foo != 0)
+	static void staticVoid (int foo) { qDebug("staticVoid=%i", foo); }
+	
+	NURIA_REQUIRE(a != b)
+	static int staticInt (int a, int b) { return a + b; }
+	
+	NURIA_REQUIRE(foo != member)
+	void memberVoid (int foo) { qDebug("memberVoid=%i", foo); }
+	
+	NURIA_REQUIRE(checker(a, b))
+	int memberInt (int a, int b) { return a + b; }
+	
+	NURIA_REQUIRE(checker (withCall, 5))
+	int withCall;
+	
+	NURIA_REQUIRE(withField != member)
+	int withField;
+	
+};
+
 // This struct will NOT be made available.
 struct Ignored {};
 

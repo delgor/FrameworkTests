@@ -72,6 +72,15 @@ private slots:
 	void testToMethodConversion ();
 	void testOperatorConversion ();
 	
+	void callGuardedCtor ();
+	void callGuardedStaticVoid ();
+	void callGuardedStaticInt ();
+	void callGuardedMemberVoid ();
+	void callGuardedMemberInt ();
+	
+	void writeGuardedFieldWithMethod ();
+	void writeGuardedFieldWithMember ();
+	
 };
 
 // 
@@ -92,7 +101,8 @@ void TriaTest::getAllTypes () {
 	using namespace Nuria;
 	
 	MetaObjectMap expected { { "Test::A", MetaObject::byName ("Test::A") },
-				 { "Test::B", MetaObject::byName ("Test::B") } };
+				 { "Test::B", MetaObject::byName ("Test::B") },
+				 { "Test::C", MetaObject::byName ("Test::C") } };
 	MetaObjectMap result = MetaObject::allTypes ();
 	
 	QCOMPARE(result, expected);
@@ -636,6 +646,169 @@ void TriaTest::testOperatorConversion () {
 	QVariant result = Nuria::Variant::convert< Test::A::Numbers > (QVariant::fromValue (a));
 	QVERIFY(result.userType () == qMetaTypeId< Test::A::Numbers > ());
 	QCOMPARE(result.value< Test::A::Numbers > (), Test::A::Hundred);
+}
+
+void TriaTest::callGuardedCtor () {
+	using namespace Nuria;
+	MetaObject *meta = MetaObject::byName ("Test::C");
+	MetaMethod ctor = meta->method ({ "", "QString" });
+	QVERIFY(ctor.isValid ());
+	
+	Callback guarded = ctor.callback ();
+	Callback unguarded = ctor.unsafeCallback ();
+	Callback test = ctor.testCallback ();
+	
+	QVERIFY(guarded.isValid ());
+	QVERIFY(unguarded.isValid ());
+	QVERIFY(test.isValid ());
+	
+	QTest::ignoreMessage (QtDebugMsg, "Foo");
+	QTest::ignoreMessage (QtDebugMsg, "C");
+	QCOMPARE(guarded (QString ("C")).isValid (), false);
+	QCOMPARE(guarded (QString ("Foo")).isValid (), true);
+	QCOMPARE(unguarded (QString ("C")).isValid (), true);
+	QCOMPARE(test (QString ("Foo")).toBool (), true);
+	QCOMPARE(test (QString ("C")).toBool (), false);
+	
+}
+
+void TriaTest::callGuardedStaticVoid () {
+	using namespace Nuria;
+	MetaObject *meta = MetaObject::byName ("Test::C");
+	MetaMethod staticVoid = meta->method ({ "staticVoid", "int" });
+	QVERIFY(staticVoid.isValid ());
+	
+	Callback guarded = staticVoid.callback ();
+	Callback unguarded = staticVoid.unsafeCallback ();
+	Callback test = staticVoid.testCallback ();
+	
+	QVERIFY(guarded.isValid ());
+	QVERIFY(unguarded.isValid ());
+	QVERIFY(test.isValid ());
+	QCOMPARE(test (1).toBool (), true);
+	QCOMPARE(test (0).toBool (), false);
+	
+	QTest::ignoreMessage (QtDebugMsg, "staticVoid=1");
+	QTest::ignoreMessage (QtDebugMsg, "staticVoid=2");
+	guarded (0);
+	guarded (1);
+	unguarded (2);
+	
+}
+
+void TriaTest::callGuardedStaticInt () {
+	using namespace Nuria;
+	MetaObject *meta = MetaObject::byName ("Test::C");
+	MetaMethod staticInt = meta->method ({ "staticInt", "int", "int" });
+	QVERIFY(staticInt.isValid ());
+	
+	Callback guarded = staticInt.callback ();
+	Callback unguarded = staticInt.unsafeCallback ();
+	Callback test = staticInt.testCallback ();
+	
+	QVERIFY(guarded.isValid ());
+	QVERIFY(unguarded.isValid ());
+	QVERIFY(test.isValid ());
+	QCOMPARE(test (1, 2).toBool (), true);
+	QCOMPARE(test (1, 1).toBool (), false);
+	
+	QCOMPARE(guarded (1, 1).isValid (), false);
+	QCOMPARE(guarded (2, 3).toInt (), 2 + 3);
+	QCOMPARE(unguarded (1, 1).toInt (), 1 + 1);
+	
+}
+
+void TriaTest::callGuardedMemberVoid () {
+	using namespace Nuria;
+	MetaObject *meta = MetaObject::byName ("Test::C");
+	MetaMethod memberVoid = meta->method ({ "memberVoid", "int" });
+	QVERIFY(memberVoid.isValid ());
+	
+	QTest::ignoreMessage (QtDebugMsg, "");
+	Test::C c ("");
+	c.member = 5;
+	
+	Callback guarded = memberVoid.callback (&c);
+	Callback unguarded = memberVoid.unsafeCallback (&c);
+	Callback test = memberVoid.testCallback (&c);
+	
+	QVERIFY(guarded.isValid ());
+	QVERIFY(unguarded.isValid ());
+	QVERIFY(test.isValid ());
+	QCOMPARE(test (4).toBool (), true);
+	QCOMPARE(test (c.member).toBool (), false);
+	
+	QTest::ignoreMessage (QtDebugMsg, "memberVoid=1");
+	QTest::ignoreMessage (QtDebugMsg, "memberVoid=2");
+	guarded (c.member);
+	guarded (1);
+	unguarded (2);
+	
+}
+
+void TriaTest::callGuardedMemberInt () {
+	using namespace Nuria;
+	MetaObject *meta = MetaObject::byName ("Test::C");
+	MetaMethod memberInt = meta->method ({ "memberInt", "int", "int" });
+	QVERIFY(memberInt.isValid ());
+	
+	QTest::ignoreMessage (QtDebugMsg, "");
+	Test::C c ("");
+	c.member = 5;
+	
+	Callback guarded = memberInt.callback (&c);
+	Callback unguarded = memberInt.unsafeCallback (&c);
+	Callback test = memberInt.testCallback (&c);
+	
+	QVERIFY(guarded.isValid ());
+	QVERIFY(unguarded.isValid ());
+	QVERIFY(test.isValid ());
+	
+	QTest::ignoreMessage (QtDebugMsg, "checker=1,2");
+	QTest::ignoreMessage (QtDebugMsg, "checker=2,1");
+	
+	QCOMPARE(test (1, 2).toBool (), true);
+	QCOMPARE(test (2, 1).toBool (), false);
+	
+	QTest::ignoreMessage (QtDebugMsg, "checker=1,1");
+	QTest::ignoreMessage (QtDebugMsg, "checker=2,3");
+	QCOMPARE(guarded (1, 1).isValid (), false);
+	QCOMPARE(guarded (2, 3).toInt (), 2 + 3);
+	QCOMPARE(unguarded (1, 1).toInt (), 1 + 1);
+}
+
+void TriaTest::writeGuardedFieldWithMethod () {
+	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::C");
+	Nuria::MetaField withCall = meta->fieldByName ("withCall");
+	QVERIFY(withCall.isValid ());
+	
+	QTest::ignoreMessage (QtDebugMsg, "");
+	Test::C c ("");
+	c.withCall = 1;
+	
+	QTest::ignoreMessage (QtDebugMsg, "checker=5,5");
+	QTest::ignoreMessage (QtDebugMsg, "checker=4,5");
+	QVERIFY(!withCall.write (&c, 5));
+	QCOMPARE(c.withCall, 1);
+	QVERIFY(withCall.write (&c, 4));
+	QCOMPARE(c.withCall, 4);
+}
+
+void TriaTest::writeGuardedFieldWithMember () {
+	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::C");
+	Nuria::MetaField withField = meta->fieldByName ("withField");
+	QVERIFY(withField.isValid ());
+	
+	QTest::ignoreMessage (QtDebugMsg, "");
+	Test::C c ("");
+	c.member = 5;
+	c.withField = 1;
+	
+	QVERIFY(!withField.write (&c, c.member));
+	QCOMPARE(c.withField, 1);
+	QVERIFY(withField.write (&c, 4));
+	QCOMPARE(c.withField, 4);
+	
 }
 
 QTEST_MAIN(TriaTest)
