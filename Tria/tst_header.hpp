@@ -23,6 +23,8 @@
 #include <QString>
 #include <QPoint>
 
+#include "tst_ignored.hpp"
+
 // Namespaces are allowed by using the qualified name of types.
 namespace Test {
 

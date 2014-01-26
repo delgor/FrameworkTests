@@ -133,6 +133,7 @@ void TriaTest::verifyTypeA () {
 	using namespace Nuria;
 	
 	MetaObject *a = MetaObject::byName ("Test::A");
+	QVERIFY(a);
 	QCOMPARE(a->metaTypeId (), qMetaTypeId< Test::A > ());
 	QCOMPARE(a->pointerMetaTypeId (), qMetaTypeId< Test::A * > ());
 	QCOMPARE(a->parents ().length (), 0);
@@ -152,6 +153,7 @@ void TriaTest::verifyTypeB () {
 	using namespace Nuria;
 	
 	MetaObject *b = MetaObject::byName ("Test::B");
+	QVERIFY(b);
 	QCOMPARE(b->metaTypeId (), qMetaTypeId< Test::B > ());
 	QCOMPARE(b->pointerMetaTypeId (), qMetaTypeId< Test::B * > ());
 	QCOMPARE(b->parents ().length (), 1);
