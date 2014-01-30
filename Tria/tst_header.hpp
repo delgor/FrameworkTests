@@ -139,7 +139,14 @@ struct NURIA_INTROSPECT B : public A {
 };
 
 // Class testing complex NURIA_REQUIREs on methods and fields
-struct NURIA_INTROSPECT C {
+struct
+NURIA_INTROSPECT
+NURIA_ANNOTATE(A, "A")
+NURIA_ANNOTATE(Foo, 1)
+NURIA_ANNOTATE(Foo, 2)
+NURIA_ANNOTATE(Foo, 3)
+NURIA_ANNOTATE(Z, "Z")
+C {
 	int member;
 	bool checker (int a, int b) {
 		qDebug("checker=%i,%i", a, b);

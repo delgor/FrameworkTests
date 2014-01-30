@@ -11,7 +11,6 @@
  * along with the library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define NURIA_NO_VARIANT_C
 #include <nuria/metaobject.hpp>
 
 #include <QtTest/QtTest>
@@ -51,6 +50,7 @@ private slots:
 	void checkMethodAnnotations ();
 	void checkEnumAnnotations ();
 	void checkFieldAnnotations ();
+	void verifyMultipleAnnotations ();
 	
 	void checkOverloadedMethod ();
 	void verifyMethodsMetaData ();
@@ -428,6 +428,27 @@ void TriaTest::checkFieldAnnotations () {
 	
 	QVariantMap expect { { "IsAField", true } };
 	QCOMPARE(allAnnotations (field), expect);
+	
+}
+
+void TriaTest::verifyMultipleAnnotations () {
+	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::C");
+	
+	// Note: The annotation{Lower,Upper}Bound implementation is shared
+	// across all Meta* classes.
+	
+	int lower = meta->annotationLowerBound ("Foo");
+	int upper = meta->annotationUpperBound ("Foo");
+	
+	QCOMPARE(meta->annotationCount (), 5);
+	QCOMPARE(lower, 1);
+	QCOMPARE(upper, 3);
+	QCOMPARE(meta->annotation (1).name ().data (), "Foo");
+	QCOMPARE(meta->annotation (2).name ().data (), "Foo");
+	QCOMPARE(meta->annotation (3).name ().data (), "Foo");
+	QCOMPARE(meta->annotation (1).value ().toInt (), 1);
+	QCOMPARE(meta->annotation (2).value ().toInt (), 2);
+	QCOMPARE(meta->annotation (3).value ().toInt (), 3);
 	
 }
 
