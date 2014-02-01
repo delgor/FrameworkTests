@@ -129,7 +129,7 @@ struct NURIA_INTROSPECT B : public A {
 	{ return a + b + c; }
 	
 	// Test conversion detection
-	B (QString s) { value = s.toInt (); }
+	B (const QString &s) { value = s.toInt (); }
 	static B fromInt (int i) { B b; b.value = i; return b; }
 	
 	// to* member-converters, const vs non-const
@@ -176,6 +176,18 @@ C {
 	
 };
 
+// Structure testing typedefs and templates
+struct NURIA_INTROSPECT D {
+	
+	// typedef QFlags< MyFlag > MyFlags
+	enum MyFlag { One = 1, Two = 2, Four = 4 };
+	Q_DECLARE_FLAGS(MyFlags, MyFlag)
+	
+	// 
+	QList< int > intList (MyFlags flags) { return QList< int > (); }
+	
+};
+
 // This struct will NOT be made available.
 struct Ignored {};
 
@@ -187,5 +199,7 @@ Q_DECLARE_METATYPE(Test::A*)
 Q_DECLARE_METATYPE(Test::A)
 Q_DECLARE_METATYPE(Test::B*)
 Q_DECLARE_METATYPE(Test::B)
+Q_DECLARE_METATYPE(Test::D*)
+Q_DECLARE_METATYPE(Test::D)
 
 #endif // TST_HEADER_HPP

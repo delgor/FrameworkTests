@@ -34,7 +34,10 @@ private slots:
 	
 	void verifyTypeA ();
 	void verifyTypeB ();
+	void verifyTypeD ();
 	void fieldsAreSorted ();
+	
+	void verifyTemplateAndTypedefs ();
 	
 	void methodsAreSorted ();
 	void enumsAreSorted ();
@@ -102,7 +105,8 @@ void TriaTest::getAllTypes () {
 	
 	MetaObjectMap expected { { "Test::A", MetaObject::byName ("Test::A") },
 				 { "Test::B", MetaObject::byName ("Test::B") },
-				 { "Test::C", MetaObject::byName ("Test::C") } };
+				 { "Test::C", MetaObject::byName ("Test::C") },
+				 { "Test::D", MetaObject::byName ("Test::D") } };
 	MetaObjectMap result = MetaObject::allTypes ();
 	
 	QCOMPARE(result, expected);
@@ -174,6 +178,23 @@ void TriaTest::verifyTypeB () {
 	
 }
 
+void TriaTest::verifyTypeD () {
+	using namespace Nuria;
+	
+	MetaObject *d = MetaObject::byName ("Test::D");
+	QVERIFY(d);
+	QCOMPARE(d->metaTypeId (), qMetaTypeId< Test::D > ());
+	QCOMPARE(d->pointerMetaTypeId (), qMetaTypeId< Test::D * > ());
+	QCOMPARE(d->parents ().length (), 0);
+	QCOMPARE(d->annotationCount (), 0);
+	QCOMPARE(d->methodCount (), 1);
+	QCOMPARE(d->fieldCount (), 0);
+	QCOMPARE(d->enumCount (), 1);
+	
+	QVERIFY(d->method ({ "intList", "Test::D::MyFlags" }).isValid ());
+	
+}
+
 void TriaTest::fieldsAreSorted () {
 	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::B");
 	
@@ -185,6 +206,18 @@ void TriaTest::fieldsAreSorted () {
 	
 	// 
 	QCOMPARE(result, expected);
+	
+}
+
+void TriaTest::verifyTemplateAndTypedefs () {
+	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::D");
+	Nuria::MetaMethod method = meta->method ({ "intList", "Test::D::MyFlags" });
+	
+	auto argTypes = method.argumentTypes ();
+	
+	QCOMPARE(method.returnType ().data (), "QList<int>");
+	QCOMPARE(argTypes.length (), 1);
+	QCOMPARE(argTypes.first ().data (), "Test::D::MyFlags");
 	
 }
 
