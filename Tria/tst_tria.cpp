@@ -48,6 +48,7 @@ private slots:
 	void checkEnumValueToKey ();
 	
 	void checkNonExistanceOfIgnoredElements ();
+	void constPointerMethodsAreIgnored ();
 	
 	void checkClassAnnotations ();
 	void checkMethodAnnotations ();
@@ -312,6 +313,12 @@ void TriaTest::checkNonExistanceOfIgnoredElements () {
 	
 	// Skipped conversion operator
 	QVERIFY(!Nuria::Variant::canConvert (qMetaTypeId< Test::A > (), qMetaTypeId< QPoint > ()));
+	
+}
+
+void TriaTest::constPointerMethodsAreIgnored () {
+	Nuria::MetaObject *meta = Nuria::MetaObject::byName ("Test::B");
+	QVERIFY(!meta->method ({ "valueAsPtr" }).isValid ());
 	
 }
 

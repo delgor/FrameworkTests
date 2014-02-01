@@ -128,6 +128,9 @@ struct NURIA_INTROSPECT B : public A {
 	int sum (int a = 5, int b = 4, int c = 3)
 	{ return a + b + c; }
 	
+	// methods with const* as result type are ignored
+	const int *valueAsPtr () const { return &value; }
+	
 	// Test conversion detection
 	B (const QString &s) { value = s.toInt (); }
 	static B fromInt (int i) { B b; b.value = i; return b; }
