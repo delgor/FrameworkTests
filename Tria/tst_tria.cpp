@@ -107,7 +107,8 @@ void TriaTest::getAllTypes () {
 	MetaObjectMap expected { { "Test::A", MetaObject::byName ("Test::A") },
 				 { "Test::B", MetaObject::byName ("Test::B") },
 				 { "Test::C", MetaObject::byName ("Test::C") },
-				 { "Test::D", MetaObject::byName ("Test::D") } };
+				 { "Test::D", MetaObject::byName ("Test::D") },
+				 { "Test::E", MetaObject::byName ("Test::E") } };
 	MetaObjectMap result = MetaObject::allTypes ();
 	
 	QCOMPARE(result, expected);

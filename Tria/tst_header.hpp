@@ -191,6 +191,16 @@ struct NURIA_INTROSPECT D {
 	
 };
 
+// Parent class is not introspected, only sub-classes are.
+struct NoValueSemantics {
+	NoValueSemantics &operator= (const NoValueSemantics &) = delete;
+};
+
+// Does not have value-semantics because of inheriting NoValueSemantics.
+struct NURIA_INTROSPECT E : NoValueSemantics {
+	int a;
+};
+
 // This struct will NOT be made available.
 struct Ignored {};
 
