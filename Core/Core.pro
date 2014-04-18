@@ -6,4 +6,5 @@ SUBDIRS += \
     serializer \
     variant \
     lazyevaluation \
-    lazyconditionwalker
+    lazyconditionwalker \
+    unixsignalhandler
