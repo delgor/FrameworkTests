@@ -7,4 +7,6 @@ SUBDIRS += \
     variant \
     lazyevaluation \
     lazyconditionwalker \
+    runtimemetaobject \
+    jsonmetaobjectreader \
     unixsignalhandler
