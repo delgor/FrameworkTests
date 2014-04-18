@@ -8,5 +8,6 @@ SUBDIRS += \
     lazyevaluation \
     lazyconditionwalker \
     runtimemetaobject \
+    qtmetaobjectwrapper \
     jsonmetaobjectreader \
     unixsignalhandler
