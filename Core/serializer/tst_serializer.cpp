@@ -16,260 +16,310 @@
 #include <QtTest/QtTest>
 #include <QObject>
 
+#include "structures.hpp"
+
+using namespace Nuria;
+
 class SerializerTest : public QObject {
 	Q_OBJECT
 public:
-	SerializerTest ();
 	
 private slots:
-	void initTestCase();
+	void serializeSimple ();
+	void serializeComplex ();
+	void serializeRecursive ();
+	void serializeWithExclude ();
+	void serializeWithCustomAllowedTypes ();
+	void serializeWithFailedField ();
+	void serializeWithNuriaConversion ();
+	void serializeWithQtConversion ();
 	
-	// Serializer::objectFromMap
-	void emptyMapCreatesDefaultInstance ();
-	void useCorrectCtorAndSetProperties ();
-	void createWithExcludedProperty ();
-	void createWithFailedProperty ();
-	void createWithFailedPropertyNoList ();
-	void objectFromNestedMap ();
-	void objectFromNestedMapNotInCtor ();
-	
-	// Serializer::objectToMap
-	void qObjectReturnsEmptyMap ();
-	void serializeTestClass ();
-	void serializeTestClassExcludeFoo ();
-	void nestedObjectFromMap ();
-	
-};
-
-class TestClass : public QObject {
-	Q_OBJECT
-	
-	Q_CLASSINFO("objectToMap.exclude.usedDefaultCtor", "true")
-	Q_PROPERTY(bool usedDefaultCtor READ usedDefaultCtor)
-	Q_PROPERTY(int someInt READ someInt WRITE setSomeInt)
-	Q_PROPERTY(TestClass *child READ child WRITE setChild)
-	Q_PROPERTY(QString foo READ foo)
-	
-public:
-	
-	Q_INVOKABLE TestClass ()
-		: m_usedDefaultCtor (true), m_someInt (0), m_child (nullptr)
-	{}
-	
-	Q_INVOKABLE TestClass (const QString &foo)
-		: m_usedDefaultCtor (false), m_someInt (0), m_foo (foo), m_child (nullptr)
-	{}
-	
-	Q_INVOKABLE TestClass (const QString &foo, TestClass *child)
-		: m_usedDefaultCtor (false), m_someInt (0), m_foo (foo), m_child (child)
-	{}
-	
-	bool usedDefaultCtor () const { return this->m_usedDefaultCtor; }
-	int someInt () const { return this->m_someInt; }
-	void setSomeInt (int i) { this->m_someInt = i; }
-	QString foo () const { return this->m_foo; }
-	TestClass *child () const { return this->m_child; }
-	void setChild (TestClass *child) { this->m_child = child; }
-	
-	bool compareTo (const TestClass *other) {
-		return (this->m_someInt == other->m_someInt &&
-			this->m_foo == other->m_foo &&
-			((!this->m_child && !other->m_child) ||
-			 (this->m_child && other->m_child &&
-			  this->m_child->compareTo (other->m_child))));
-	}
-	
-private:
-	bool m_usedDefaultCtor;
-	int m_someInt;
-	QString m_foo;
-	TestClass *m_child;
-};
-
-class AnotherClass : public QObject {
-	Q_OBJECT
-	Q_PROPERTY(TestClass *child READ child WRITE setChild)
-public:
-	
-	Q_INVOKABLE
-	AnotherClass () : QObject () {}
-	
-	TestClass *child () const { return this->m_child; }
-	void setChild (TestClass *c) { this->m_child = c; }
-	
-private:
-	TestClass *m_child;
+	void deserializeSimple ();
+	void deserializeComplex ();
+	void deserializeRecursive ();
+	void deserializeWithExclude ();
+	void deserializeWithFailedField ();
+	void deserializeWithNuriaConversion ();
+	void deserializeWithQtConversion ();
 	
 };
 
-Q_DECLARE_METATYPE(TestClass*)
-Q_DECLARE_METATYPE(AnotherClass*)
-
-// 
-static QVariantMap getTestClassMap () {
-	QVariantMap map;
+void SerializerTest::serializeSimple () {
+	QVariantMap expected { { "digit", 123 }, { "string", "hello" },
+			       { "number", 12.34f }, { "boolean", true } };
+	Simple simple;
 	
-	map.insert ("someInt", 123);
-	map.insert ("foo", "Foo");
+	simple.digit = 123;
+	simple.string = "hello";
+	simple.number = 12.34f;
+	simple.boolean = true;
 	
-	return map;
-}
-
-static QVariantMap getNestedTestClassMap () {
-	QVariantMap child = getTestClassMap ();
-	QVariantMap parent = getTestClassMap ();
-	
-	child.insert ("foo", "Child");
-	parent.insert ("child", child);
-	
-	return parent;
-}
-
-SerializerTest::SerializerTest () {
-	
-}
-
-void SerializerTest::initTestCase () {
-	qRegisterMetaType< TestClass * > ();
-	qRegisterMetaType< AnotherClass * > ();
-}
-
-void SerializerTest::qObjectReturnsEmptyMap () {
-	QVariantMap expected;
-	
-	QVariantMap result = Nuria::Serializer::objectToMap (new QObject);
-	QCOMPARE(result, expected);
-}
-
-void SerializerTest::serializeTestClass () {
-	QVariantMap expected = getTestClassMap ();
-	
-	TestClass testClass ("Foo");
-	testClass.setSomeInt (123);
-	QVariantMap result = Nuria::Serializer::objectToMap (&testClass);
+	// 
+	Serializer serializer;
+	QVariantMap result = serializer.serialize (&simple, "Simple");
 	
 	QCOMPARE(result, expected);
 }
 
-void SerializerTest::serializeTestClassExcludeFoo () {
-	QVariantMap expected = getTestClassMap ();
-	expected.remove ("foo");
+void SerializerTest::serializeComplex () {
+	QVariantMap expected {
+		{ "simple",
+			QVariantMap { { "digit", 123 }, { "string", "hello" },
+				      { "number", 12.34f }, { "boolean", true } } },
+		{ "outer", 42 }
+	};
 	
-	TestClass testClass;
-	testClass.setSomeInt (123);
-	QVariantMap result = Nuria::Serializer::objectToMap (&testClass, 0, QStringList() << "foo");
+	Complex complex;
+	complex.simple.digit = 123;
+	complex.simple.string = "hello";
+	complex.simple.number = 12.34f;
+	complex.simple.boolean = true;
+	complex.outer = 42;
+	
+	// 
+	Serializer serializer;
+	serializer.setRecursionDepth (Serializer::InfiniteRecursion);
+	QVariantMap result = serializer.serialize (&complex, "Complex");
 	
 	QCOMPARE(result, expected);
 }
 
-void SerializerTest::nestedObjectFromMap () {
-	TestClass child ("Child");
-	TestClass parent ("Foo", &child);
-	child.setSomeInt (123);
-	parent.setSomeInt (123);
+void SerializerTest::serializeRecursive () {
+	QVariantMap expected {
+			{ "depth", 1 }, { "recurse", QVariantMap {
+					{ "depth", 2 }, { "recurse", QVariantMap {
+						{ "depth", 3 } 
+					}
+				}
+			}
+		}
+	};
 	
-	QVariantMap expected = getNestedTestClassMap ();
-	QVariantMap result = Nuria::Serializer::objectToMap (&parent, 100);
+	// 
+	Recursive recurse;
+	recurse.recurse = new Recursive;
+	recurse.recurse->recurse = new Recursive;
+	recurse.recurse->recurse->recurse = new Recursive;
+	recurse.depth = 1;
+	recurse.recurse->depth = 2;
+	recurse.recurse->recurse->depth = 3;
+	recurse.recurse->recurse->recurse->depth = 4;
+	
+	// 
+	Serializer serializer;
+	serializer.setRecursionDepth (2);
+	QVariantMap result = serializer.serialize (&recurse, "Recursive");
 	
 	QCOMPARE(result, expected);
 }
 
-void SerializerTest::emptyMapCreatesDefaultInstance () {
-	QObject *result = Nuria::Serializer::objectFromMap (&TestClass::staticMetaObject, QVariantMap ());
+void SerializerTest::serializeWithExclude () {
+	QVariantMap expected { { "digit", 123 }, { "string", "hello" } };
+	Simple simple;
+	
+	simple.digit = 123;
+	simple.string = "hello";
+	
+	// 
+	Serializer serializer;
+	serializer.setExclude ({ "number", "boolean" });
+	QVariantMap result = serializer.serialize (&simple, "Simple");
+	
+	QCOMPARE(result, expected);
+}
+
+void SerializerTest::serializeWithCustomAllowedTypes () {
+	QDateTime theDateTime = QDateTime::currentDateTime ();
+	QVariantMap expected { { "foo", 321 }, { "dateTime", theDateTime } };
+	
+	Custom custom;
+	custom.foo = 321;
+	custom.dateTime = theDateTime;
+	
+	// 
+	Serializer serializer;
+	serializer.setAllowedTypes (QVector< QByteArray > { "QDateTime" });
+	QVariantMap result = serializer.serialize (&custom, "Custom");
+	
+	QCOMPARE(result["dateTime"].userType (), int (QMetaType::QDateTime));
+	QCOMPARE(result, expected);
+}
+
+void SerializerTest::serializeWithFailedField () {
+	QVariantMap expected { { "works", true } };
+	
+	Fail fail;
+	fail.works = true;
+	fail.someList.append (123);
+	
+	// 
+	Serializer serializer;
+	QVariantMap result = serializer.serialize (&fail, "Fail");
+	
+	QCOMPARE(result, expected);
+	QCOMPARE(serializer.failedFields (), QStringList { "someList" });
+}
+
+void SerializerTest::serializeWithNuriaConversion () {
+	QVariantMap expected { { "custom", "foo" } };
+	
+	WithCustomType withCustomType;
+	Variant::registerConversion (&SomeCustomType::toString);
+	
+	// 
+	Serializer serializer;
+	QVariantMap result = serializer.serialize (&withCustomType, "WithCustomType");
+	
+	QCOMPARE(result, expected);
+}
+
+void SerializerTest::serializeWithQtConversion () {
+	QDateTime theDateTime = QDateTime::currentDateTime ();
+	
+	QVariantMap expected { { "foo", 123 }, { "dateTime", theDateTime.toString (Qt::ISODate) } };
+	
+	Custom custom;
+	custom.foo = 123;
+	custom.dateTime = theDateTime;
+	
+	// 
+	Serializer serializer;
+	QVariantMap result = serializer.serialize (&custom, "Custom");
+	
+	QCOMPARE(result, expected);
+}
+
+void SerializerTest::deserializeSimple () {
+	QVariantMap data { { "digit", 123 }, { "string", "hello" },
+			   { "number", 12.34f }, { "boolean", true } };
+	
+	// 
+	Serializer serializer;
+	Simple *result = serializer.deserialize< Simple > (data);
 	
 	QVERIFY(result);
-	QCOMPARE(QString(result->metaObject ()->className ()), QString("TestClass"));
-	QCOMPARE(result->property ("usedDefaultCtor"), QVariant(true));
+	QCOMPARE(result->digit, 123);
+	QCOMPARE(result->string, QString ("hello"));
+	QCOMPARE(result->number, 12.34f);
+	QCOMPARE(result->boolean, true);
+	
 	delete result;
 }
 
-void SerializerTest::useCorrectCtorAndSetProperties () {
-	QObject *result = Nuria::Serializer::objectFromMap (&TestClass::staticMetaObject, getTestClassMap ());
-	TestClass *test = qobject_cast< TestClass * > (result);
+void SerializerTest::deserializeComplex () {
+	QVariantMap data { { "outer", 42 },
+			   { "simple", QVariantMap {
+				{ "digit", 123 }, { "string", "hello" },
+				{ "number", 12.34f }, { "boolean", true } }
+			   } };
 	
-	QVERIFY(test);
-	QCOMPARE(test->usedDefaultCtor (), false);
-	QCOMPARE(test->someInt (), 123);
-	QCOMPARE(test->foo (), QString ("Foo"));
+	// 
+	Serializer serializer;
+	serializer.setRecursionDepth (Serializer::InfiniteRecursion);
+	Complex *result = (Complex *)serializer.deserialize (data, "Complex");
+	
+	QVERIFY(result);
+	QCOMPARE(result->outer, 42);
+	QCOMPARE(result->simple.digit, 123);
+	QCOMPARE(result->simple.string, QString ("hello"));
+	QCOMPARE(result->simple.number, 12.34f);
+	QCOMPARE(result->simple.boolean, true);
+	
 	delete result;
-	
 }
 
-void SerializerTest::createWithExcludedProperty () {
-	QObject *result = Nuria::Serializer::objectFromMap (&TestClass::staticMetaObject, getTestClassMap (),
-							    0, QStringList() << "foo");
-	TestClass *test = qobject_cast< TestClass * > (result);
+void SerializerTest::deserializeRecursive () {
+	QVariantMap data {
+		{ "depth", 1 }, { "recurse", QVariantMap {
+				{ "depth", 2 }, { "recurse", QVariantMap {
+						{ "depth", 3 }, { "recurse", QVariantMap {
+								{ "depth", 4 } 
+							}
+						} 
+					}
+				}
+			}
+		}
+	};
 	
-	QVERIFY(test);
-	QCOMPARE(test->usedDefaultCtor (), true);
-	QCOMPARE(test->someInt (), 123);
-	QCOMPARE(test->foo (), QString ());
-	delete result;
+	// 
+	Serializer serializer;
+	serializer.setRecursionDepth (2);
+	Recursive *recurse = (Recursive *)serializer.deserialize (data, "Recursive");
 	
+	QVERIFY(recurse);
+	QVERIFY(recurse->recurse);
+	QVERIFY(recurse->recurse->recurse);
+	QVERIFY(!recurse->recurse->recurse->recurse);
+	QCOMPARE(recurse->depth, 1);
+	QCOMPARE(recurse->recurse->depth, 2);
+	QCOMPARE(recurse->recurse->recurse->depth, 3);
+	
+	delete recurse;
 }
 
-void SerializerTest::createWithFailedProperty () {
-	QVariantMap map = getTestClassMap ();
-	map.insert ("foo", QByteArray());
+void SerializerTest::deserializeWithExclude () {
+	QVariantMap data { { "digit", 123 }, { "string", "hello" },
+			   { "number", 12.34f }, { "boolean", true } };
 	
-	QObject *result = Nuria::Serializer::objectFromMap (&TestClass::staticMetaObject, map);
-	TestClass *test = qobject_cast< TestClass * > (result);
+	// 
+	Serializer serializer;
+	serializer.setExclude ({ "number", "boolean" });
+	Simple *simple = (Simple *)serializer.deserialize (data, "Simple");
 	
-	QVERIFY(test);
-	QCOMPARE(test->usedDefaultCtor (), true);
-	QCOMPARE(test->someInt (), 123);
-	QCOMPARE(test->foo (), QString ());
-	delete result;
+	QVERIFY(simple);
+	QCOMPARE(simple->digit, 123);
+	QCOMPARE(simple->string, QString ("hello"));
+	QCOMPARE(simple->number, 0.f);
+	QCOMPARE(simple->boolean, false);
 	
+	delete simple;
 }
 
-void SerializerTest::createWithFailedPropertyNoList () {
-	QStringList failed;
-	QVariantMap map = getTestClassMap ();
-	map.insert ("foo", QByteArray());
+void SerializerTest::deserializeWithFailedField () {
+	QVariantMap data { { "works", true }, { "someList", QVariantList { 1, 2, 3 } } };
 	
-	QObject *result = Nuria::Serializer::objectFromMap (&TestClass::staticMetaObject, map,
-							    0, QStringList(), &failed);
-	TestClass *test = qobject_cast< TestClass * > (result);
+	// 
+	Serializer serializer;
+	Fail *fail = (Fail *)serializer.deserialize (data, "Fail");
 	
-	QVERIFY(test);
-	QCOMPARE(test->usedDefaultCtor (), true);
-	QCOMPARE(test->someInt (), 123);
-	QCOMPARE(test->foo (), QString ());
-	QVERIFY(failed.length () == 1);
-	QVERIFY(failed.contains ("foo"));
-	delete result;
+	QVERIFY(fail);
+	QCOMPARE(fail->works, true);
+	QVERIFY(fail->someList.isEmpty ());
+	QCOMPARE(serializer.failedFields (), QStringList { "someList" });
 	
+	delete fail;
 }
 
-void SerializerTest::objectFromNestedMap () {
-	QVariantMap map = getNestedTestClassMap ();
-	QStringList failed;
+void SerializerTest::deserializeWithNuriaConversion () {
+	QVariantMap data { { "custom", "foo" } };
 	
-	QObject *obj = Nuria::Serializer::objectFromMap (&TestClass::staticMetaObject, map,
-							 1, QStringList(), &failed);
-	TestClass *parent = qobject_cast< TestClass * > (obj);
+	Variant::registerConversion (&SomeCustomType::fromString);
+	QTest::ignoreMessage (QtDebugMsg, "fromString: foo");
 	
-	QVERIFY(parent);
-	QVERIFY(parent->child ());
-	QVERIFY(!parent->child ()->child ());
-	QVERIFY(failed.isEmpty ());
-	QCOMPARE(parent->foo (), QString("Foo"));
-	QCOMPARE(parent->child ()->foo (), QString("Child"));
+	// 
+	Serializer serializer;
+	WithCustomType *custom = (WithCustomType *)serializer.deserialize (data, "WithCustomType");
 	
+	QVERIFY(custom);
+	QVERIFY(custom->custom.works);
+	
+	delete custom;
 }
 
-void SerializerTest::objectFromNestedMapNotInCtor () {
-	QVariantMap map = getNestedTestClassMap ();
+void SerializerTest::deserializeWithQtConversion () {
+	QDateTime theDateTime (QDate (2014, 04, 14), QTime (17, 03, 14));
+	QVariantMap data { { "foo", 123 }, { "dateTime", theDateTime.toString (Qt::ISODate) } };
 	
-	QObject *obj = Nuria::Serializer::objectFromMap (&AnotherClass::staticMetaObject, map, 1);
-	AnotherClass *another = qobject_cast< AnotherClass * > (obj);
+	// 
+	Serializer serializer;
+	Custom *custom = (Custom *)serializer.deserialize (data, "Custom");
 	
-	QVERIFY(another);
-	QVERIFY(another->child ());
-	QVERIFY(!another->child ()->child ());
-	QCOMPARE(another->child ()->foo (), QString("Child"));
+	QVERIFY(custom);
+	QCOMPARE(custom->foo, 123);
+	QCOMPARE(custom->dateTime, theDateTime);
 	
+	delete custom;
 }
 
 QTEST_MAIN(SerializerTest)

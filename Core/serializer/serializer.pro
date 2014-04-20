@@ -9,11 +9,12 @@ QT       += testlib
 QT       -= gui
 NURIA    += core
 
-TARGET = tst_serializer
+TARGET    = tst_serializer
 CONFIG   -= app_bundle
 
 TEMPLATE = app
 
 
 SOURCES += tst_serializer.cpp
+HEADERS += structures.hpp
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
