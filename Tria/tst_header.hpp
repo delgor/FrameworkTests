@@ -186,6 +186,9 @@ struct NURIA_INTROSPECT D {
 	enum MyFlag { One = 1, Two = 2, Four = 4 };
 	Q_DECLARE_FLAGS(MyFlags, MyFlag)
 	
+	// Operators are ignored for now.
+	D &operator= (const D &other) { return *this; }
+	
 	// 
 	QList< int > intList (MyFlags flags) { return QList< int > (); }
 	
