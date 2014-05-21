@@ -33,6 +33,9 @@ private slots:
 	
 	void parseVersion_data ();
 	void parseVersion ();
+	
+	void parseVerb_data ();
+	void parseVerb ();
 };
 
 void HttpParserTest::parseFirstLineHappyPath () {
@@ -111,7 +114,6 @@ void HttpParserTest::parseHeaderLineBadData () {
 	QVERIFY(!parser.parseHeaderLine (data, name, value));
 }
 
-Q_DECLARE_METATYPE(Nuria::HttpClient::HttpVersion)
 void HttpParserTest::parseVersion_data () {
 	QTest::addColumn< QString > ("version");
 	QTest::addColumn< HttpClient::HttpVersion > ("result");
@@ -129,6 +131,28 @@ void HttpParserTest::parseVersion () {
 	QByteArray data = version.toLatin1 ();
 	
 	QCOMPARE(parser.parseVersion (data), result);
+	
+}
+
+void HttpParserTest::parseVerb_data () {
+	QTest::addColumn< QString > ("verb");
+	QTest::addColumn< HttpClient::HttpVerb > ("result");
+	
+	QTest::newRow ("GET") << "GET" << HttpClient::GET;
+	QTest::newRow ("POST") << "POST" << HttpClient::POST;
+	QTest::newRow ("HEAD") << "HEAD" << HttpClient::HEAD;
+	QTest::newRow ("PUT") << "PUT" << HttpClient::PUT;
+	QTest::newRow ("DELETE") << "DELETE" << HttpClient::DELETE;
+	QTest::newRow ("invalid") << "get" << HttpClient::InvalidVerb;
+}
+
+void HttpParserTest::parseVerb () {
+	HttpParser parser;
+	QFETCH(QString, verb);
+	QFETCH(HttpClient::HttpVerb, result);
+	QByteArray data = verb.toLatin1 ();
+	
+	QCOMPARE(parser.parseVerb (data), result);
 	
 }
 
