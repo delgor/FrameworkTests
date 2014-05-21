@@ -1,5 +1,5 @@
 #!/bin/bash
-KnownModules=(Core)
+KnownModules=(Core Network)
 Modules=()
 Verbose=0
 Rebuild=0
