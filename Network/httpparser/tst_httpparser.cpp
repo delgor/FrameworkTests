@@ -36,6 +36,10 @@ private slots:
 	
 	void parseVerb_data ();
 	void parseVerb ();
+	
+	void parseRangeHeaderValueHappyPath ();
+	void parseRangeHeaderValueBadData_data ();
+	void parseRangeHeaderValueBadData ();
 };
 
 void HttpParserTest::parseFirstLineHappyPath () {
@@ -154,6 +158,44 @@ void HttpParserTest::parseVerb () {
 	
 	QCOMPARE(parser.parseVerb (data), result);
 	
+}
+
+void HttpParserTest::parseRangeHeaderValueHappyPath () {
+	HttpParser parser;
+	QByteArray data = "bytes=50-60";
+	
+	int begin = 0;
+	int end = 0;
+	QVERIFY(parser.parseRangeHeaderValue (data, begin, end));
+	
+	QCOMPARE(begin, 50);
+	QCOMPARE(end, 60);
+}
+
+void HttpParserTest::parseRangeHeaderValueBadData_data () {
+	QTest::addColumn< QString > ("range");
+	
+	QTest::newRow ("empty") << "";
+	QTest::newRow ("no bytes=") << "12-34";
+	QTest::newRow ("missing minus") << "bytes=1234";
+	QTest::newRow ("missing begin") << "bytes=-34";
+	QTest::newRow ("missing end") << "bytes=12-";
+	QTest::newRow ("bad begin") << "bytes=0xaf-500";
+	QTest::newRow ("bad end") << "bytes=12-0xaf";
+	QTest::newRow ("begin < end") << "bytes=34-12";
+	QTest::newRow ("begin == end") << "bytes=12-12";
+	QTest::newRow ("end is negative") << "bytes=0--12";
+	
+}
+
+void HttpParserTest::parseRangeHeaderValueBadData () {
+	HttpParser parser;
+	QFETCH(QString, range);
+	QByteArray data = range.toLatin1 ();
+	
+	int begin = 0;
+	int end = 0;
+	QVERIFY(!parser.parseRangeHeaderValue (data, begin, end));
 }
 
 QTEST_MAIN(HttpParserTest)
