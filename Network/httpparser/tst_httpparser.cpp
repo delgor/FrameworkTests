@@ -22,6 +22,8 @@ class HttpParserTest : public QObject {
 	Q_OBJECT
 private slots:
 	
+	void removeTrailingNewline ();
+	
 	void parseFirstLineHappyPath ();
 	void parseFirstLineBadData_data ();
 	void parseFirstLineBadData ();
@@ -40,7 +42,25 @@ private slots:
 	void parseRangeHeaderValueHappyPath ();
 	void parseRangeHeaderValueBadData_data ();
 	void parseRangeHeaderValueBadData ();
+	
+	void correctHeaderKeyCase_data ();
+	void correctHeaderKeyCase ();
 };
+
+void HttpParserTest::removeTrailingNewline () {
+	HttpParser parser;
+	
+	QByteArray valueRn ("bla\r\n");
+	QByteArray valueN ("bla\n");
+	QByteArray value ("bla");
+	
+	QVERIFY(parser.removeTrailingNewline (valueRn));
+	QVERIFY(parser.removeTrailingNewline (valueN));
+	QVERIFY(!parser.removeTrailingNewline (value));
+	QCOMPARE(valueRn, QByteArray ("bla"));
+	QCOMPARE(valueN, QByteArray ("bla"));
+	QCOMPARE(value, QByteArray ("bla"));
+}
 
 void HttpParserTest::parseFirstLineHappyPath () {
 	HttpParser parser;
@@ -164,8 +184,8 @@ void HttpParserTest::parseRangeHeaderValueHappyPath () {
 	HttpParser parser;
 	QByteArray data = "bytes=50-60";
 	
-	int begin = 0;
-	int end = 0;
+	qint64 begin = 0;
+	qint64 end = 0;
 	QVERIFY(parser.parseRangeHeaderValue (data, begin, end));
 	
 	QCOMPARE(begin, 50);
@@ -193,9 +213,27 @@ void HttpParserTest::parseRangeHeaderValueBadData () {
 	QFETCH(QString, range);
 	QByteArray data = range.toLatin1 ();
 	
-	int begin = 0;
-	int end = 0;
+	qint64 begin = 0;
+	qint64 end = 0;
 	QVERIFY(!parser.parseRangeHeaderValue (data, begin, end));
+}
+
+void HttpParserTest::correctHeaderKeyCase_data () {
+	QTest::addColumn< QString > ("header");
+	QTest::addColumn< QString > ("result");
+	
+	QTest::newRow ("no change") << "Content-Length" << "Content-Length";
+	QTest::newRow ("lowercase") << "content-length" << "Content-Length";
+	QTest::newRow ("all upper") << "CONTENT-LENGTH" << "CONTENT-LENGTH";
+	
+}
+
+void HttpParserTest::correctHeaderKeyCase () {
+	HttpParser parser;
+	QFETCH(QString, header);
+	QFETCH(QString, result);
+	
+	QCOMPARE(parser.correctHeaderKeyCase (header.toLatin1 ()), result.toLatin1 ());
 }
 
 QTEST_MAIN(HttpParserTest)
