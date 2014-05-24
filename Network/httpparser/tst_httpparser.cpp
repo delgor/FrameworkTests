@@ -45,6 +45,10 @@ private slots:
 	
 	void correctHeaderKeyCase_data ();
 	void correctHeaderKeyCase ();
+	
+	void parseFirstLineFullHappyPath ();
+	void parseFirstLineFullBadData_data ();
+	void parseFirstLineFullBadData ();
 };
 
 void HttpParserTest::removeTrailingNewline () {
@@ -234,6 +238,41 @@ void HttpParserTest::correctHeaderKeyCase () {
 	QFETCH(QString, result);
 	
 	QCOMPARE(parser.correctHeaderKeyCase (header.toLatin1 ()), result.toLatin1 ());
+}
+
+void HttpParserTest::parseFirstLineFullHappyPath () {
+	HttpParser parser;
+	QByteArray line = "PUT /foo/bar HTTP/1.1";
+	
+	QByteArray path;
+	HttpClient::HttpVerb verb;
+	HttpClient::HttpVersion version;
+	QVERIFY(parser.parseFirstLineFull (line, verb, path, version));
+	
+	QCOMPARE(path, QByteArray ("/foo/bar"));
+	QCOMPARE(verb, HttpClient::PUT);
+	QCOMPARE(version, HttpClient::Http1_1);
+}
+
+void HttpParserTest::parseFirstLineFullBadData_data () {
+	QTest::addColumn< QString > ("line");
+	
+	QTest::newRow ("empty") << "";
+	QTest::newRow ("bad verb") << "YAY /foo/bar HTTP/1.1";
+	QTest::newRow ("bad path") << "GET  HTTP/1.1";
+	QTest::newRow ("bad version") << "GET /foo/bar HTTP/2.0";
+}
+
+void HttpParserTest::parseFirstLineFullBadData () {
+	HttpParser parser;
+	QFETCH(QString, line);
+	QByteArray lineData = line.toLatin1 ();
+	
+	QByteArray path;
+	HttpClient::HttpVerb verb;
+	HttpClient::HttpVersion version;
+	QVERIFY(!parser.parseFirstLineFull (lineData, verb, path, version));
+	
 }
 
 QTEST_MAIN(HttpParserTest)
