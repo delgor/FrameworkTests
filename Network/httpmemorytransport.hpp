@@ -41,6 +41,12 @@ public:
 	const QByteArray &outData ()
 	{ return outgoing->data (); }
 	
+	void clearOutgoing () {
+		outgoing->close ();
+		outgoing->setData (QByteArray ());
+		outgoing->open (QIODevice::ReadWrite);
+	}
+	
 	void setIncoming (const QByteArray &data) {
 		ingoing->write (data);
 		ingoing->reset ();

@@ -2,4 +2,6 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     httpparser \
-    httpwriter
+    httpwriter \
+    httpclient \
+    restfulhttpnode
