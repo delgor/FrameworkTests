@@ -16,7 +16,7 @@
 #include <QtTest/QtTest>
 #include <QObject>
 
-#include "httpmemorytransport.hpp"
+#include <httpmemorytransport.hpp>
 #include <nuria/httpserver.hpp>
 #include <nuria/httpwriter.hpp>
 #include <nuria/httpnode.hpp>

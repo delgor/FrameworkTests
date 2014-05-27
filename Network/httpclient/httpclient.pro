@@ -7,11 +7,11 @@ TARGET    = tst_httpparser
 CONFIG   -= app_bundle
 
 TEMPLATE = app
-
+INCLUDEPATH = ..
 
 SOURCES += tst_httpclient.cpp \
-    httpmemorytransport.cpp
+    ../httpmemorytransport.cpp
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
 
 HEADERS += \
-    httpmemorytransport.hpp
+    ../httpmemorytransport.hpp
