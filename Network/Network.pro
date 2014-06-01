@@ -4,4 +4,5 @@ SUBDIRS += \
     httpparser \
     httpwriter \
     httpclient \
-    restfulhttpnode
+    restfulhttpnode \
+    httpmultipartreader
