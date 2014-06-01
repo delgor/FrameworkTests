@@ -50,8 +50,7 @@ private:
 	
 	// Used in happyPath() and bytePerByteTransfer()
 	QByteArray input = "--asdasdasd\r\n"
-			   "Content-Disposition: form-data; name=\"foo\"\r\n"
-			   "Content-Type: text/plain\r\n\r\n"
+			   "Content-Disposition: form-data; name=\"foo\"\r\n\r\n"
 			   "Foo\r\n"
 			   "--asdasdasd\r\n"
 			   "Content-Disposition: form-data; name=\"bar\"\r\n"
