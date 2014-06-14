@@ -49,6 +49,10 @@ private slots:
 	void callingVoidLambdaWithArguments ();
 	void callingIntLambdaWithArguments ();
 	
+	void callingVariadicNoBoundVariables ();
+	void callingVariadicBoundVariables ();
+	void callingVariadicPositionalBoundVariables ();
+	
 	void implicitArgumentConversion ();
 	void implicitArgumentConversionCustomType ();
 	void implicitVariantToTargetType ();
@@ -195,6 +199,46 @@ void CallbackTest::callingVoidLambdaWithArguments () {
 void CallbackTest::callingIntLambdaWithArguments () {
 	Callback cb = Callback::fromLambda ([](int a, int b) { return a + b; });
 	QCOMPARE(cb (4, 5).toInt (), 9);
+}
+
+void CallbackTest::callingVariadicNoBoundVariables () {
+	QVariantList expected { 123, true, "Hello" };
+	QVariantList result;
+	
+	auto l = [&result](const QVariantList &args) { result = args; };
+	Callback cb = Callback::fromLambda (l, true);
+	
+	cb (123, true, QString ("Hello"));
+	QCOMPARE(result, expected);
+}
+
+void CallbackTest::callingVariadicBoundVariables () {
+	QVariantList expected { 123, true, "Hello" };
+	QVariantList result;
+	int resultNum = 0;
+	
+	auto l = [&](int num, const QVariantList &args) { result = args; resultNum = num; };
+	Callback cb = Callback::fromLambda (l, true);
+ 	cb.bind (456);
+	
+	cb (123, true, QString ("Hello"));
+	QCOMPARE(result, expected);
+	QCOMPARE(resultNum, 456);
+}
+
+void CallbackTest::callingVariadicPositionalBoundVariables () {
+	QVariantList expected { 123, true, "Hello" };
+	QVariantList result;
+	int resultNum = 0;
+	
+	auto l = [&](const QVariantList &args, int num) { result = args; resultNum = num; };
+	Callback cb = Callback::fromLambda (l, true);
+	cb.bind (Callback::_1, 456);
+	
+	cb (123, true, QString ("Hello"));
+	QCOMPARE(result, expected);
+	QCOMPARE(resultNum, 456);
+	
 }
 
 void CallbackTest::implicitArgumentConversion () {
