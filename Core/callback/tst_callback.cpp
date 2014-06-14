@@ -44,6 +44,11 @@ private slots:
 	void callingVoidSlotWithArguments ();
 	void callingIntSlotWithArguments ();
 	
+	void callingVoidLambdaNoArguments ();
+	void callingIntLambdaNoArguments ();
+	void callingVoidLambdaWithArguments ();
+	void callingIntLambdaWithArguments ();
+	
 	void implicitArgumentConversion ();
 	void implicitArgumentConversionCustomType ();
 	void implicitVariantToTargetType ();
@@ -164,6 +169,32 @@ void CallbackTest::callingVoidSlotWithArguments () {
 void CallbackTest::callingIntSlotWithArguments () {
 	Members m;
 	QCOMPARE(Callback (&m, SLOT(intWithArgs(int,int)))(4, 5), QVariant (4 + 5));
+}
+
+void CallbackTest::callingVoidLambdaNoArguments () {
+	bool invoked = false;
+	Callback cb = Callback::fromLambda ([&invoked]() { invoked = true; });
+	
+	cb ();
+	QVERIFY(invoked);
+}
+
+void CallbackTest::callingIntLambdaNoArguments () {
+	Callback cb = Callback::fromLambda ([]() { return 123; });
+	QCOMPARE(cb ().toInt (), 123);
+}
+
+void CallbackTest::callingVoidLambdaWithArguments () {
+	int sum = 0;
+	Callback cb = Callback::fromLambda ([&sum](int a, int b) { sum = a + b; });
+	
+	cb (4, 5);
+	QCOMPARE(sum, 9);
+}
+
+void CallbackTest::callingIntLambdaWithArguments () {
+	Callback cb = Callback::fromLambda ([](int a, int b) { return a + b; });
+	QCOMPARE(cb (4, 5).toInt (), 9);
 }
 
 void CallbackTest::implicitArgumentConversion () {
