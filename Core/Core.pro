@@ -10,6 +10,7 @@ SUBDIRS += \
     runtimemetaobject \
     qtmetaobjectwrapper \
     jsonmetaobjectreader \
-    unixsignalhandler \
     temporarybufferdevice \
     referencedevice
+
+unix: SUBDIRS += unixsignalhandler
