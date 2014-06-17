@@ -11,6 +11,7 @@ SUBDIRS += \
     qtmetaobjectwrapper \
     jsonmetaobjectreader \
     temporarybufferdevice \
-    referencedevice
+    referencedevice \
+    session
 
 unix: SUBDIRS += unixsignalhandler
