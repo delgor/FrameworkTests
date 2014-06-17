@@ -12,6 +12,7 @@ SUBDIRS += \
     jsonmetaobjectreader \
     temporarybufferdevice \
     referencedevice \
-    session
+    session \
+    sessionmanager
 
 unix: SUBDIRS += unixsignalhandler
