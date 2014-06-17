@@ -4,17 +4,13 @@
 #include <nuria/session.hpp>
 
 class SessionTest : public QObject {
-	Q_OBJECT	
+	Q_OBJECT
 public:
-	SessionTest ();	
 	
 private slots:
 	void defaultConstructed ();
 	void dataStorage ();
 };
-
-SessionTest::SessionTest () {
-}
 
 void SessionTest::defaultConstructed () {
 	Nuria::Session session;
